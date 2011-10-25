@@ -7,7 +7,6 @@ import urllib2
 import base64
 import time
 from threading import Thread
-import thread
 from xml.etree import ElementTree
 import webbrowser
 import sys, os
@@ -35,10 +34,10 @@ class GChecker(Thread):
         #                        5, 10, 15, 20, 25, 30,
         #                        25, 20, 15, 10, 5, 0]
         self.animation_queue = [
-                                0, -10, -20, -30,
-                                -20, -10, 0,
-                                10, 20, 30,
-                                20, 10, 0]
+                                0, -5, -10,
+                                -5, 0,
+                                5, 10,
+                                5, 0]
         self.old_messages = []
     
     def get_page(self):
