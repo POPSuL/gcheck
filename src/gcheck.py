@@ -11,6 +11,13 @@ import thread
 from xml.etree import ElementTree
 import webbrowser
 import sys, os
+try:
+    import pynotify
+    USE_NOTIFY = True
+    pynotify.init('Gchecker')
+except ImportError:
+    USE_NOTIFY = False
+    
 from config import GCHECK_CONFIG
 
 __GPATH__ = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +39,7 @@ class GChecker(Thread):
                                 -20, -10, 0,
                                 10, 20, 30,
                                 20, 10, 0]
+        self.old_messages = []
     
     def get_page(self):
         theurl = 'https://mail.google.com/mail/feed/atom'
@@ -65,6 +73,26 @@ class GChecker(Thread):
             self.indicator.set_icon(__GPATH__ + '/img/ani/%d.png' % i)
             time.sleep(0.1)
     
+    def get_list_difference(self, a, b):
+        diff = []
+        for item in b:
+            try:
+                idx = a.index(item)
+            except ValueError:
+                diff.append(item)
+        return diff
+    
+    def notify_messages_diff(self, messages):
+        if USE_NOTIFY:
+            difference = self.get_list_difference(self.old_messages,
+                                                  messages)
+            for i in difference:
+                notify = pynotify.Notification(i['sender'] or i['email'],
+                                               i['title'],
+                                               'indicator-messages-new')
+                notify.show()
+            self.old_messages = messages
+            
     def run(self):
         while True:
             try:
@@ -85,6 +113,7 @@ class GChecker(Thread):
                     self.indicator.set_icon("indicator-messages")
                     self.status_inst.set_items_if_empty_mail()
                 else:
+                    self.notify_messages_diff(messages)
                     self.animate_new()
                 self.status_inst.set_default_items()
             except AttributeError as (ec, es):
