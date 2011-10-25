@@ -61,8 +61,7 @@ class GChecker(Thread):
         return messages
     
     def animate_new(self):
-        for i in self.animation_queue:
-            print i
+        for i in self.animation_queue + self.animation_queue[1:]:
             self.indicator.set_icon(__GPATH__ + '/img/ani/%d.png' % i)
             time.sleep(0.1)
     
