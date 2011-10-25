@@ -8,27 +8,9 @@ from threading import Thread
 from xml.etree import ElementTree
 import webbrowser
 import sys, os
+import appindicator
+import gtk
 
-try:
-    import appindicator
-except ImportError:
-    print '''
-    Для работы необходим appindicator.
-    Установите appindicator с помощью команды
-    apt-get install python-appindicator
-    и повторите попытку.
-    '''
-    sys.exit(1)
-try:
-    import gtk
-except ImportError:
-    print '''
-    Для работы необходим pygtk.
-    Установите pygtk с помощью команды
-    apt-get install python-gtk2
-    и повторите попытку.
-    '''
-    sys.exit(1)
 try:
     import pynotify
     USE_NOTIFY = True
@@ -70,7 +52,8 @@ class GChecker(Thread):
         theurl = 'https://mail.google.com/mail/feed/atom'
         req = urllib2.Request(theurl)
         base64string = base64.encodestring(
-                                           '%s:%s' % (GCHECK_CONFIG['email'], GCHECK_CONFIG['password']))[:-1]
+                            '%s:%s' % (GCHECK_CONFIG['email'],
+                                       GCHECK_CONFIG['password']))[:-1]
         authheader =  "Basic %s" % base64string
         req.add_header("Authorization", authheader)
         handle = urllib2.urlopen(req)
@@ -136,7 +119,8 @@ class GChecker(Thread):
                     item.show()
                 self.indicator.set_label('%d' % len(messages))
                 if len(messages) == 0:
-                    self.indicator.set_icon(__GPATH__ + "/img/indicator-messages.png")
+                    self.indicator.set_icon(
+                                    __GPATH__ + "/img/indicator-messages.png")
                     self.status_inst.set_items_if_empty_mail()
                 else:
                     self.notify_messages_diff(messages)
@@ -155,8 +139,8 @@ class GChecker(Thread):
 class GStatus:
     def __init__(self):
         self.indicator = appindicator.Indicator( "gcheck-client",
-                                                 __GPATH__ + "/img/indicator-messages.png",
-                                                 appindicator.CATEGORY_APPLICATION_STATUS)
+                __GPATH__ + "/img/indicator-messages.png",
+                appindicator.CATEGORY_APPLICATION_STATUS)
         self.indicator.set_status(appindicator.STATUS_ACTIVE)
         self.menu = gtk.Menu()
         self.indicator.set_menu(self.menu)
