@@ -1,8 +1,6 @@
 #!/usr/bin/python
 #-*- coding:utf-8 -*-
 
-import appindicator
-import gtk
 import urllib2
 import base64
 import time
@@ -10,14 +8,42 @@ from threading import Thread
 from xml.etree import ElementTree
 import webbrowser
 import sys, os
+
+try:
+    import appindicator
+except ImportError:
+    print '''
+    Для работы необходим appindicator.
+    Установите appindicator с помощью команды
+    apt-get install python-appindicator
+    и повторите попытку.
+    '''
+    sys.exit(1)
+try:
+    import gtk
+except ImportError:
+    print '''
+    Для работы необходим pygtk.
+    Установите pygtk с помощью команды
+    apt-get install python-gtk2
+    и повторите попытку.
+    '''
+    sys.exit(1)
 try:
     import pynotify
     USE_NOTIFY = True
     pynotify.init('Gchecker')
 except ImportError:
     USE_NOTIFY = False
-    
-from config import GCHECK_CONFIG
+try:
+    from config import GCHECK_CONFIG
+except ImportError:
+    print '''
+    Не удалось подключить конфигурацию!
+    Скопируйте example_config.py в config.py, отредактируйте,
+    и попробуйте снова
+    '''
+    sys.exit(1)
 
 __GPATH__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -101,7 +127,8 @@ class GChecker(Thread):
                     self.menu.remove(item)
                     del item
                 for message in messages:
-                    buf = '%s — %s' % (message['sender'] or message['email'], message['title']) 
+                    buf = '%s — %s' % (message['sender'] or message['email'],
+                                       message['title']) 
                     item = gtk.MenuItem(buf)
                     item.set_data('href', message['link'])
                     item.connect('activate', self.on_select)
@@ -109,7 +136,7 @@ class GChecker(Thread):
                     item.show()
                 self.indicator.set_label('%d' % len(messages))
                 if len(messages) == 0:
-                    self.indicator.set_icon("indicator-messages")
+                    self.indicator.set_icon(__GPATH__ + "/img/indicator-messages.png")
                     self.status_inst.set_items_if_empty_mail()
                 else:
                     self.notify_messages_diff(messages)
@@ -128,7 +155,7 @@ class GChecker(Thread):
 class GStatus:
     def __init__(self):
         self.indicator = appindicator.Indicator( "gcheck-client",
-                                                 "indicator-messages",
+                                                 __GPATH__ + "/img/indicator-messages.png",
                                                  appindicator.CATEGORY_APPLICATION_STATUS)
         self.indicator.set_status(appindicator.STATUS_ACTIVE)
         self.menu = gtk.Menu()
@@ -146,16 +173,16 @@ class GStatus:
     def set_default_items(self):
         if self._inited != True:
             self.separator = gtk.SeparatorMenuItem()
-            self.options = gtk.MenuItem(u'Настройки')
-            self.options.connect('activate', self.on_settings)
+        #    self.options = gtk.MenuItem(u'Настройки')
+        #    self.options.connect('activate', self.on_settings)
             self.exit = gtk.MenuItem(u'Выход')
             self.exit.connect('activate', self.on_exit)
             self.separator.show()
-            self.options.show()
+        #    self.options.show()
             self.exit.show()
             self._inited = True
         self.menu.append(self.separator)
-        self.menu.append(self.options)
+        #self.menu.append(self.options)
         self.menu.append(self.exit)
         
     def set_items_if_empty_mail(self):
@@ -186,14 +213,14 @@ class GStatus:
     def main(self):
         gtk.main()
         
-
-try:
-    gstat = GStatus()
-    checker = GChecker(gstat)
-    checker.start()
-    def on_quit_handler():
+if __name__ == '__main__':
+    try:
+        gstat = GStatus()
+        checker = GChecker(gstat)
+        checker.start()
+        def on_quit_handler():
+            checker._Thread__stop()
+        gstat.set_on_quit_handler(on_quit_handler)
+        gstat.main()
+    except:
         checker._Thread__stop()
-    gstat.set_on_quit_handler(on_quit_handler)
-    gstat.main()
-except:
-    checker._Thread__stop()
