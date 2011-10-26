@@ -29,13 +29,93 @@ except ImportError:
 
 __GPATH__ = os.path.dirname(os.path.abspath(__file__))
 
+ICONS = {
+         'about.me': 'aboutdotme-48x48.png',
+         'aim.com': 'aim-48x48.png',
+         'amazon.com': 'amazon-48x48.png',
+         'bebo.com': 'bebo-48x48.png',
+         'creativecommons.org': 'creativecommons-48x48.png',
+         'delicious.com': 'delicious-48x48.png',
+         'digg.com': 'digg-48x48.png',
+         'diggthis.net': 'digg-this-48x48.png',
+         'dopplr.com': 'dopplr-48x48.png',
+         'dribbble.com': 'dribbble-48x48.png',
+         'ebay.com': 'ebay-48x48.png',
+         'facebook.com': 'facebook-48x48.png',
+         'facebookmail.com': 'facebook-48x48.png',
+         'ffffound.com': 'ffffound-48x48.png',
+         'flickr.com': 'flickr-48x48.png',
+         'formspring.me': 'formspring-48x48.png',
+         'forrst.com': 'forrst-48x48.png',
+         'foursquare.com': 'foursquare-48x48.png',
+         'geotag.com': 'geotag-48x48.png',
+         'getstatisfaction.com': 'getstatisfaction-48x48.png',
+         'github.org': 'github-48x48.png',
+         'goodreads.com': 'goodreads-48x48.png',
+         'plus.google.com': 'google+-48x48.png',
+         'google.com': 'google-48x48.png',
+         'gowalla.com': 'gowalla-48x48.png',
+         'huffduffer.com': 'huffduffer-48x48.png',
+         'identi.ca': 'identica-48x48.png',
+         'ilike.com': 'ilike-48x48.png',
+         'imdb.com': 'imdb-48x48.png',
+         'lanyrd.com': 'lanyrd-48x48.png',
+         'last.fm': 'lastfm-48x48.png',
+         'linkedin.com': 'linkedin-48x48.png',
+         'meetup.com': 'meetup-48x48.png',
+         'mixx.com': 'mixx-48x48.png',
+         'myspace.com': 'myspace-48x48.png',
+         'netvibes.com': 'netvibes-48x48.png',
+         'newsvine.com': 'newsvine-48x48.png',
+         'orkut.com': 'orkut-48x48.png',
+         'paypal.com': 'paypal-48x48.png',
+         'picasa.com': 'picasa-48x48.png',
+         'pinboard.in': 'pinboard-48x48.png',
+         'plancast.com': 'plancast-48x48.png',
+         'posterous.com': 'posterous-48x48.png',
+         'rdio.com': 'rdio-48x48.png',
+         'redernaut.com': 'redernaut-48x48.png',
+         'reddit.com': 'reddit-48x48.png',
+         'sharethis.com': 'share-48x48.png',
+         'skype.com': 'skype-48x48.png',
+         'slideshare.net': 'slideshare-48x48.png',
+         'speakerdeck.com': 'speakerdeck-48x48.png',
+         'spotify.com': 'spotify-48x48.png',
+         'stumbleupon.com': 'stumbleupon-48x48.png',
+         'tumblr.com': 'tumblr-48x48.png',
+         'twitter.com': 'twitter-48x48.png',
+         'viddler.com': 'viddler-48x48.png',
+         'vimeo.com': 'vimeo-48x48.png',
+         'wikipedia.org': 'wikipedia-48x48.png',
+         'xbox.com': 'xbox-48x48.png',
+         'xing.com': 'xing-48x48.png',
+         'yahoo.com': 'yahoo-48x48.png',
+         'yelp.com': 'yelp-48x48.png',
+         'youtube.com': 'youtube-48x48.png',
+         'zootool.com': 'zootool-48x48.png'}
+
 class GChecker(Thread):
-    def __init__(self, status):
+    def __init__(self):
         Thread.__init__(self)
         gtk.gdk.threads_init()
-        self.status_inst = status
-        self.menu = status.get_menu()
-        self.indicator = status.get_indicator()
+        
+        self.indicator = appindicator.Indicator( "gcheck-client",
+                __GPATH__ + "/img/indicator-messages.png",
+                appindicator.CATEGORY_APPLICATION_STATUS)
+        self.indicator.set_status(appindicator.STATUS_ACTIVE)
+        self.menu = gtk.Menu()
+        self.indicator.set_menu(self.menu)
+        self.indicator.set_label('0')
+        self._inited = False
+        
+        self.mail_empty = gtk.MenuItem(u'Почта пуста')
+        self.mail_empty.show()
+        self.mail_empty.connect('activate', self.on_empty_mail)
+        self.set_items_if_empty_mail()
+        
+        self.set_default_items()
+        
+        
         #self.animation_queue = [
         #                        0, -5, -10, -15, -20, -25, -30,
         #                        -25, -20, -15, -10, -5, 0,
@@ -76,6 +156,12 @@ class GChecker(Thread):
                              'sender': sender})
         return messages
     
+    def get_email_icon(self, email):
+        for site in ICONS:
+            if email.endswith(site):
+                return '/socialmediaicons/' + ICONS[site]
+        return 'indicator-messages-new'
+    
     def animate_new(self):
         for i in self.animation_queue + self.animation_queue[1:]:
             self.indicator.set_icon(__GPATH__ + '/img/ani/%d.png' % i)
@@ -95,9 +181,10 @@ class GChecker(Thread):
             difference = self.get_list_difference(self.old_messages,
                                                   messages)
             for i in difference:
+                icon = self.get_email_icon(i['email'])
                 notify = pynotify.Notification(i['sender'] or i['email'],
-                                               i['title'],
-                                               'indicator-messages-new')
+                                    i['title'],
+                                    __GPATH__ + '/img/' + icon)
                 notify.show()
             self.old_messages = messages
             
@@ -121,39 +208,17 @@ class GChecker(Thread):
                 if len(messages) == 0:
                     self.indicator.set_icon(
                                     __GPATH__ + "/img/indicator-messages.png")
-                    self.status_inst.set_items_if_empty_mail()
+                    self.set_items_if_empty_mail()
                 else:
                     self.notify_messages_diff(messages)
                     self.animate_new()
-                self.status_inst.set_default_items()
-            except AttributeError as (ec, es):
-                print es
+                self.set_default_items()
+            #except AttributeError as (ec, es):
+            #    print es
             except:
                 print sys.exc_info()
             time.sleep(15)
-    def on_select(self, item):
-        href = item.get_data('href')
-        self.menu.remove(item)
-        webbrowser.open(href)
-
-class GStatus:
-    def __init__(self):
-        self.indicator = appindicator.Indicator( "gcheck-client",
-                __GPATH__ + "/img/indicator-messages.png",
-                appindicator.CATEGORY_APPLICATION_STATUS)
-        self.indicator.set_status(appindicator.STATUS_ACTIVE)
-        self.menu = gtk.Menu()
-        self.indicator.set_menu(self.menu)
-        self.indicator.set_label('0')
-        self._inited = False
-        
-        self.mail_empty = gtk.MenuItem(u'Почта пуста')
-        self.mail_empty.show()
-        self.mail_empty.connect('activate', self.on_empty_mail)
-        self.set_items_if_empty_mail()
-        
-        self.set_default_items()
-        
+            
     def set_default_items(self):
         if self._inited != True:
             self.separator = gtk.SeparatorMenuItem()
@@ -169,14 +234,12 @@ class GStatus:
         #self.menu.append(self.options)
         self.menu.append(self.exit)
         
+    def on_select(self, item):
+        href = item.get_data('href')
+        webbrowser.open(href)
+        
     def set_items_if_empty_mail(self):
         self.menu.append(self.mail_empty)
-    
-    def get_menu(self):
-        return self.menu
-    
-    def get_indicator(self):
-        return self.indicator
 
     def on_empty_mail(self, item):
         webbrowser.open('https://mail.google.com/mail/#inbox')
@@ -185,26 +248,15 @@ class GStatus:
         #options = gtk.glade.XML('options.glade')
         pass
         
-        
-    
     def on_exit(self, item):
-        self.on_quit_handler()
+        self._Thread__stop()
         sys.exit(0)
-    
-    def set_on_quit_handler(self, hndl):
-        self.on_quit_handler = hndl
-    
-    def main(self):
-        gtk.main()
+
         
 if __name__ == '__main__':
     try:
-        gstat = GStatus()
-        checker = GChecker(gstat)
+        checker = GChecker()
         checker.start()
-        def on_quit_handler():
-            checker._Thread__stop()
-        gstat.set_on_quit_handler(on_quit_handler)
-        gstat.main()
+        gtk.main()
     except:
         checker._Thread__stop()
