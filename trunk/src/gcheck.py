@@ -10,6 +10,7 @@ import webbrowser
 import sys, os
 import appindicator
 import gtk
+import requests
 
 try:
     import pynotify
@@ -54,6 +55,7 @@ ICONS = {
          'goodreads.com': 'goodreads-48x48.png',
          'plus.google.com': 'google+-48x48.png',
          'google.com': 'google-48x48.png',
+         'googlegroups.com': 'googlegroups-42x42.png',
          'gowalla.com': 'gowalla-48x48.png',
          'huffduffer.com': 'huffduffer-48x48.png',
          'identi.ca': 'identica-48x48.png',
@@ -129,16 +131,20 @@ class GChecker(Thread):
         self.old_messages = []
     
     def get_page(self):
-        theurl = 'https://mail.google.com/mail/feed/atom'
-        req = urllib2.Request(theurl)
-        base64string = base64.encodestring(
-                            '%s:%s' % (GCHECK_CONFIG['email'],
-                                       GCHECK_CONFIG['password']))[:-1]
-        authheader =  "Basic %s" % base64string
-        req.add_header("Authorization", authheader)
-        handle = urllib2.urlopen(req)
-        thepage = handle.read()
-        return thepage
+        url = 'https://mail.google.com/mail/feed/atom'
+        
+        req = requests.get(url, auth=(GCHECK_CONFIG['email'],
+                                     GCHECK_CONFIG['password']))
+        return req.content
+        #req = urllib2.Request(theurl)
+        #base64string = base64.encodestring(
+        #                    '%s:%s' % (GCHECK_CONFIG['email'],
+        #                               GCHECK_CONFIG['password']))[:-1]
+        #authheader =  "Basic %s" % base64string
+        #req.add_header("Authorization", authheader)
+        #handle = urllib2.urlopen(req)
+        #thepage = handle.read()
+        #return thepage
 
     def get_messages(self, page):
         page = page.replace('http://purl.org/atom/ns#', '')
@@ -160,7 +166,7 @@ class GChecker(Thread):
         for site in ICONS:
             if email.endswith(site):
                 return '/socialmediaicons/' + ICONS[site]
-        return 'indicator-messages-new'
+        return 'indicator-messages-new.png'
     
     def animate_new(self):
         for i in self.animation_queue + self.animation_queue[1:]:
