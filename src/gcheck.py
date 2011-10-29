@@ -1,8 +1,6 @@
 #!/usr/bin/python
 #-*- coding:utf-8 -*-
 
-import urllib2
-import base64
 import time
 from threading import Thread
 from xml.etree import ElementTree
@@ -117,12 +115,6 @@ class GChecker(Thread):
         
         self.set_default_items()
         
-        
-        #self.animation_queue = [
-        #                        0, -5, -10, -15, -20, -25, -30,
-        #                        -25, -20, -15, -10, -5, 0,
-        #                        5, 10, 15, 20, 25, 30,
-        #                        25, 20, 15, 10, 5, 0]
         self.animation_queue = [
                                 0, -5, -10,
                                 -5, 0,
@@ -136,15 +128,6 @@ class GChecker(Thread):
         req = requests.get(url, auth=(GCHECK_CONFIG['email'],
                                      GCHECK_CONFIG['password']))
         return req.content
-        #req = urllib2.Request(theurl)
-        #base64string = base64.encodestring(
-        #                    '%s:%s' % (GCHECK_CONFIG['email'],
-        #                               GCHECK_CONFIG['password']))[:-1]
-        #authheader =  "Basic %s" % base64string
-        #req.add_header("Authorization", authheader)
-        #handle = urllib2.urlopen(req)
-        #thepage = handle.read()
-        #return thepage
 
     def get_messages(self, page):
         page = page.replace('http://purl.org/atom/ns#', '')
@@ -210,7 +193,7 @@ class GChecker(Thread):
                     item.connect('activate', self.on_select)
                     self.menu.append(item)
                     item.show()
-                self.indicator.set_label('%d' % len(messages))
+                self.indicator.set_label(str(len(messages)))
                 if len(messages) == 0:
                     self.indicator.set_icon(
                                     __GPATH__ + "/img/indicator-messages.png")
