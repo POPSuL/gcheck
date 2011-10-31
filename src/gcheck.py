@@ -104,8 +104,6 @@ class GChecker(Thread):
                 appindicator.CATEGORY_APPLICATION_STATUS)
         self.indicator.set_status(appindicator.STATUS_ACTIVE)
         self.menu = gtk.Menu()
-        self.indicator.set_menu(self.menu)
-        self.indicator.set_label('0')
         self._inited = False
         
         self.mail_empty = gtk.MenuItem(u'Почта пуста')
@@ -114,6 +112,9 @@ class GChecker(Thread):
         self.set_items_if_empty_mail()
         
         self.set_default_items()
+        
+        self.indicator.set_menu(self.menu)
+        self.indicator.set_label('0')
         
         self.animation_queue = [
                                 0, -5, -10,
@@ -211,17 +212,12 @@ class GChecker(Thread):
     def set_default_items(self):
         if self._inited != True:
             self.separator = gtk.SeparatorMenuItem()
-        #    self.options = gtk.MenuItem(u'Настройки')
-        #    self.options.connect('activate', self.on_settings)
             self.exit = gtk.MenuItem(u'Выход')
             self.exit.connect('activate', self.on_exit)
-            self.separator.show()
-        #    self.options.show()
-            self.exit.show()
             self._inited = True
         self.menu.append(self.separator)
-        #self.menu.append(self.options)
         self.menu.append(self.exit)
+        self.menu.show_all()
         
     def on_select(self, item):
         href = item.get_data('href')
@@ -232,10 +228,6 @@ class GChecker(Thread):
 
     def on_empty_mail(self, item):
         webbrowser.open('https://mail.google.com/mail/#inbox')
-        
-    def on_settings(self, item):
-        #options = gtk.glade.XML('options.glade')
-        pass
         
     def on_exit(self, item):
         self._Thread__stop()
